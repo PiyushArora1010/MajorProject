@@ -75,12 +75,12 @@ class ASTModel(nn.Module):
         if t_dim <= self.oringal_hw:
             new_pos_embed = new_pos_embed[:, :, :, int(self.oringal_hw / 2) - int(t_dim / 2): int(self.oringal_hw / 2) - int(t_dim / 2) + t_dim]
         else:
-            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), mode='bilinear')
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), align_corners=False)
         # cut (from middle) or interpolate the first dimension of the positional embedding
         if f_dim <= self.oringal_hw:
             new_pos_embed = new_pos_embed[:, :, int(self.oringal_hw / 2) - int(f_dim / 2): int(self.oringal_hw / 2) - int(f_dim / 2) + f_dim, :]
         else:
-            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), mode='bilinear')
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), align_corners=False)
         # flatten the positional embedding
         new_pos_embed = new_pos_embed.reshape(1, self.original_embedding_dim, num_patches).transpose(1,2)
         # concatenate the above positional embedding with the cls token and distillation token of the deit model.
@@ -180,12 +180,12 @@ class ASTModelCosineSim(nn.Module):
         if t_dim <= self.oringal_hw:
             new_pos_embed = new_pos_embed[:, :, :, int(self.oringal_hw / 2) - int(t_dim / 2): int(self.oringal_hw / 2) - int(t_dim / 2) + t_dim]
         else:
-            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), mode='bilinear')
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), align_corners=False)
         # cut (from middle) or interpolate the first dimension of the positional embedding
         if f_dim <= self.oringal_hw:
             new_pos_embed = new_pos_embed[:, :, int(self.oringal_hw / 2) - int(f_dim / 2): int(self.oringal_hw / 2) - int(f_dim / 2) + f_dim, :]
         else:
-            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), mode='bilinear')
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), align_corners=False)
         # flatten the positional embedding
         new_pos_embed = new_pos_embed.reshape(1, self.original_embedding_dim, num_patches).transpose(1,2)
         # concatenate the above positional embedding with the cls token and distillation token of the deit model.
@@ -287,12 +287,12 @@ class ASTModelAttentionSparse(nn.Module):
         if t_dim <= self.oringal_hw:
             new_pos_embed = new_pos_embed[:, :, :, int(self.oringal_hw / 2) - int(t_dim / 2): int(self.oringal_hw / 2) - int(t_dim / 2) + t_dim]
         else:
-            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), mode='bilinear')
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), align_corners=False)
         # cut (from middle) or interpolate the first dimension of the positional embedding
         if f_dim <= self.oringal_hw:
             new_pos_embed = new_pos_embed[:, :, int(self.oringal_hw / 2) - int(f_dim / 2): int(self.oringal_hw / 2) - int(f_dim / 2) + f_dim, :]
         else:
-            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), mode='bilinear')
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), align_corners=False)
         # flatten the positional embedding
         new_pos_embed = new_pos_embed.reshape(1, self.original_embedding_dim, num_patches).transpose(1,2)
         # concatenate the above positional embedding with the cls token and distillation token of the deit model.
