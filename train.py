@@ -75,9 +75,12 @@ class trainer:
                 bestAcc = validAcc
                 torch.save(self.model.state_dict(), self.model_path)
 
-    def _test(self):
+    def _test(self, path=None):
         accuracy = evalDic['accuracy']
-        self.model.load_state_dict(torch.load(self.model_path))
+        if path == None:
+            self.model.load_state_dict(torch.load(self.model_path))
+        else:
+            self.model.load_state_dict(torch.load(path))
         testAcc = accuracy(self.testloader, self.model, DEVICE)
         print(f'Test Accuracy: {testAcc}')
 
@@ -106,9 +109,12 @@ class trainer:
                 bestAcc = validAcc
                 torch.save(self.model.state_dict(), self.model_path)
         
-    def _testCustom(self):
+    def _testCustom(self, path=None):
         accuracy = evalDic['accuracycustom']
-        self.model.load_state_dict(torch.load(self.model_path))
+        if path == None:
+            self.model.load_state_dict(torch.load(self.model_path))
+        else:
+            self.model.load_state_dict(torch.load(path))
         testAcc = accuracy(self.testloader, self.memloader, self.model, DEVICE)
         print(f'Test Accuracy: {testAcc}')
 
@@ -124,3 +130,11 @@ class trainer:
         else:
             self._trainCustom()
             self._testCustom()
+    
+    def eval(self):
+        self._setDataset()
+        self._setModelAndOptimizer()
+        if self.model_name == 'astmodel':
+            self._test(self.pretrained_path)
+        else:
+            self._testCustom(self.pretrained_path)
