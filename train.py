@@ -17,10 +17,9 @@ class trainer:
         for key in args:
             setattr(self, key, args[key])
         
-        if not os.path.exists('models'):
-            os.makedirs('models')
-        
-        self.model_path = 'models/'+self.run_name+'.pt'
+        self.model_path = 'models/'+self.dataset+'/'+self.model_name+'/'+self.run_name+'.pt'
+        if not os.path.exists('models/'+self.dataset+'/'+self.model_name+'/'):
+            os.makedirs('models/'+self.dataset+'/'+self.model_name+'/')
         print(f'[DEVICE][{torch.cuda.device_count()}]')
         print(f'[Model][Saved at {self.model_path}]')
 

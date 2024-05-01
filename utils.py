@@ -1,7 +1,23 @@
 import torch
 import torchaudio
 
+from numpy.random import RandomState
+import numpy as np
+
+import os
+import random
 import pandas as pd
+
+def set_seed(seed: int) -> RandomState:
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False # set to false for reproducibility, True to boost performance
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    torch.cuda.manual_seed(seed)
+    random.seed(seed)
+    random_state = random.getstate()
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    return random_state
 
 def _wav2fbank(self, filename, target_length=1024):
 
