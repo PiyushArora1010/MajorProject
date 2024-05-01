@@ -17,7 +17,7 @@ parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
 parser.add_argument('--weight_decay', type=float, default=1e-5, help='Weight decay')
 parser.add_argument('--workers', type=int, default=4, help='Number of workers')
 parser.add_argument('--targetLength', type=int, default=1024, help='Target length of audio')
-parser.add_argument('--runs', type=int, default=3, help='Number of runs')
+parser.add_argument('--runs', type=int, default=1, help='Number of runs')
 
 args = parser.parse_args()
 
