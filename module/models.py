@@ -137,7 +137,7 @@ class ASTModelCosineSim(nn.Module):
     """
     def __init__(self, label_dim=527, fstride=10, tstride=10, input_fdim=128, input_tdim=1024, model_size='base384'):
 
-        super(ASTModel, self).__init__()
+        super(ASTModelCosineSim, self).__init__()
         assert timm.__version__ == '0.4.5', 'Please use timm == 0.4.5, the code might not be compatible with newer versions.'
 
         # override timm input shape restriction
@@ -243,7 +243,7 @@ class ASTModelAttentionSparse(nn.Module):
     """
     def __init__(self, label_dim=527, fstride=10, tstride=10, input_fdim=128, input_tdim=1024, model_size='base384', heads=4, sparse=True):
 
-        super(ASTModel, self).__init__()
+        super(ASTModelAttentionSparse, self).__init__()
         assert timm.__version__ == '0.4.5', 'Please use timm == 0.4.5, the code might not be compatible with newer versions.'
 
         # override timm input shape restriction
