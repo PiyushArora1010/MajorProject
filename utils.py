@@ -19,7 +19,7 @@ def set_seed(seed: int) -> RandomState:
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
     return random_state
 
-def _wav2fbank(self, filename, target_length=1024):
+def _wav2fbank(filename, target_length=1024):
 
         waveform, sr = torchaudio.load(filename)
         waveform = waveform - waveform.mean()
