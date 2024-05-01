@@ -21,7 +21,8 @@ class trainer:
             os.makedirs('models')
         
         self.model_path = 'models/'+self.run_name+'.pt'
-
+        print(f'[DEVICE][{torch.cuda.device_count()}]')
+        print(f'[Model][Saved at {self.model_path}]')
 
     def _setDataset(self):
         if self.dataset == 'urbansound':
@@ -113,7 +114,9 @@ class trainer:
 
     def run(self):
         self._setDataset()
+        print(f'[Dataset][{self.dataset}]')
         self._setModelAndOptimizer()
+        print(f'[Model][{self.model_name}]')
         self._setLossFunction()
         if self.model_name == 'astmodel':
             self._train()
