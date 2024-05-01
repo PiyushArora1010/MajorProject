@@ -159,7 +159,8 @@ class ASTModelCosineSim(nn.Module):
         self.oringal_hw = int(self.original_num_patches ** 0.5)
         self.original_embedding_dim = self.v.pos_embed.shape[2]
         # self.mlp_head = nn.Sequential(nn.LayerNorm(self.original_embedding_dim), nn.Linear(self.original_embedding_dim, label_dim))
-        self.mlp_head = nn.Sequential(nn.LayerNorm(self.original_embedding_dim), CosineSimLayer(self.original_embedding_dim, label_dim))
+        self.layer_norm_mlp = nn.LayerNorm(self.original_embedding_dim)
+        self.mlp_head = CosineSimLayer(self.original_embedding_dim, label_dim)
 
         # automatcially get the intermediate shape
         f_dim, t_dim = self.get_shape(fstride, tstride, input_fdim, input_tdim)
@@ -219,13 +220,13 @@ class ASTModelCosineSim(nn.Module):
             x = blk(x)
         x = self.v.norm(x)
         x = (x[:, 0] + x[:, 1]) / 2
+        x = self.layer_norm_mlp(x)
         return x
 
      
     def forward(self, x, memset, return_weights=False):
         x = self.features(x)
         memset = self.features(memset)
-        
         output = self.mlp_head(x, memset, return_weights=return_weights)
         return output
 
@@ -265,7 +266,8 @@ class ASTModelAttentionSparse(nn.Module):
         self.oringal_hw = int(self.original_num_patches ** 0.5)
         self.original_embedding_dim = self.v.pos_embed.shape[2]
         # self.mlp_head = nn.Sequential(nn.LayerNorm(self.original_embedding_dim), nn.Linear(self.original_embedding_dim, label_dim))
-        self.mlp_head = nn.Sequential(nn.LayerNorm(self.original_embedding_dim), AttentionSparseMax(self.original_embedding_dim, label_dim, heads=heads, sparse=sparse))
+        self.layer_norm_mlp = nn.LayerNorm(self.original_embedding_dim)
+        self.mlp_head = AttentionSparseMax(self.original_embedding_dim, label_dim, heads=heads, sparse=sparse)
 
         # automatcially get the intermediate shape
         f_dim, t_dim = self.get_shape(fstride, tstride, input_fdim, input_tdim)
@@ -325,6 +327,7 @@ class ASTModelAttentionSparse(nn.Module):
             x = blk(x)
         x = self.v.norm(x)
         x = (x[:, 0] + x[:, 1]) / 2
+        x = self.layer_norm_mlp(x)
         return x
 
      
