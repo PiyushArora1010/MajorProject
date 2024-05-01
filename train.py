@@ -49,7 +49,7 @@ class trainer:
     def _setModelAndOptimizer(self):
         self.model = modelDic[self.model_name](self.classes).to(DEVICE)
         self.model = DataParallel(self.model)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
     def _setLossFunction(self):
         self.loss_fn = torch.nn.CrossEntropyLoss()
