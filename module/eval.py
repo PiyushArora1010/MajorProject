@@ -34,5 +34,5 @@ def accuracyCustom(loader, memloader, model, device):
 
 evalDic = {
     'accuracy': accuracy,
-    'accuracyCustom': accuracyCustom
+    'accuracycustom': accuracyCustom
 }
