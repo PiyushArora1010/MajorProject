@@ -20,7 +20,7 @@ class trainer:
         self.model_path = 'models/'+self.dataset+'/'+self.model_name+'/'+self.run_name+'.pt'
         if not os.path.exists('models/'+self.dataset+'/'+self.model_name+'/'):
             os.makedirs('models/'+self.dataset+'/'+self.model_name+'/')
-        print(f'[DEVICE][{torch.cuda.device_count()}]')
+        print(f'[DEVICE][{DEVICE}][{torch.cuda.device_count()}]')
         print(f'[Model][Saved at {self.model_path}]')
 
     def _setDataset(self):
