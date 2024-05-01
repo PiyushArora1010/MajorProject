@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.cuda.amp import autocast
 import timm
 from timm.models.layers import to_2tuple,trunc_normal_
 from module.layers import CosineSimLayer, AttentionSparseMax
