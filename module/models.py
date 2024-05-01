@@ -4,7 +4,6 @@ import timm
 from timm.models.layers import to_2tuple,trunc_normal_
 from module.layers import CosineSimLayer, AttentionSparseMax
 
-
 class PatchEmbed(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
         super().__init__()
