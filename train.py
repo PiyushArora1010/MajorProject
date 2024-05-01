@@ -2,6 +2,7 @@ import os
 
 import torch
 
+from torch.nn import DataParallel
 from torch.utils.data import random_split
 
 from module.eval import evalDic
@@ -46,6 +47,7 @@ class trainer:
 
     def _setModelAndOptimizer(self):
         self.model = modelDic[self.model_name](self.classes).to(DEVICE)
+        self.model = DataParallel(self.model)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
     def _setLossFunction(self):
