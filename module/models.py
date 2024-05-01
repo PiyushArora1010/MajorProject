@@ -44,13 +44,13 @@ class ASTModel(nn.Module):
         # if AudioSet pretraining is not used (but ImageNet pretraining may still apply)
 
         if model_size == 'tiny224':
-            self.v = timm.create_model('vit_deit_tiny_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_tiny_distilled_patch16_224', pretrained=True)
         elif model_size == 'small224':
-            self.v = timm.create_model('vit_deit_small_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_small_distilled_patch16_224', pretrained=True)
         elif model_size == 'base224':
-            self.v = timm.create_model('vit_deit_base_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_base_distilled_patch16_224', pretrained=True)
         elif model_size == 'base384':
-            self.v = timm.create_model('vit_deit_base_distilled_patch16_384', pretrained=False)
+            self.v = timm.create_model('vit_deit_base_distilled_patch16_384', pretrained=True)
         else:
             raise Exception('Model size must be one of tiny224, small224, base224, base384.')
         self.original_num_patches = self.v.patch_embed.num_patches
@@ -66,10 +66,25 @@ class ASTModel(nn.Module):
 
         # the linear projection layer
         new_proj = torch.nn.Conv2d(1, self.original_embedding_dim, kernel_size=(16, 16), stride=(fstride, tstride))
+        new_proj.weight = torch.nn.Parameter(torch.sum(self.v.patch_embed.proj.weight, dim=1).unsqueeze(1))
+        new_proj.bias = self.v.patch_embed.proj.bias
         self.v.patch_embed.proj = new_proj
-        new_pos_embed = nn.Parameter(torch.zeros(1, self.v.patch_embed.num_patches + 2, self.original_embedding_dim))
-        self.v.pos_embed = new_pos_embed
-        trunc_normal_(self.v.pos_embed, std=.02)
+        
+        new_pos_embed = self.v.pos_embed[:, 2:, :].detach().reshape(1, self.original_num_patches, self.original_embedding_dim).transpose(1, 2).reshape(1, self.original_embedding_dim, self.oringal_hw, self.oringal_hw)
+        # cut (from middle) or interpolate the second dimension of the positional embedding
+        if t_dim <= self.oringal_hw:
+            new_pos_embed = new_pos_embed[:, :, :, int(self.oringal_hw / 2) - int(t_dim / 2): int(self.oringal_hw / 2) - int(t_dim / 2) + t_dim]
+        else:
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), mode='bilinear')
+        # cut (from middle) or interpolate the first dimension of the positional embedding
+        if f_dim <= self.oringal_hw:
+            new_pos_embed = new_pos_embed[:, :, int(self.oringal_hw / 2) - int(f_dim / 2): int(self.oringal_hw / 2) - int(f_dim / 2) + f_dim, :]
+        else:
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), mode='bilinear')
+        # flatten the positional embedding
+        new_pos_embed = new_pos_embed.reshape(1, self.original_embedding_dim, num_patches).transpose(1,2)
+        # concatenate the above positional embedding with the cls token and distillation token of the deit model.
+        self.v.pos_embed = nn.Parameter(torch.cat([self.v.pos_embed[:, :2, :].detach(), new_pos_embed], dim=1))
         
 
     def get_shape(self, fstride, tstride, input_fdim=128, input_tdim=1024):
@@ -120,7 +135,7 @@ class ASTModelCosineSim(nn.Module):
     :param audioset_pretrain: if use full AudioSet and ImageNet pretrained model
     :param model_size: the model size of AST, should be in [tiny224, small224, base224, base384], base224 and base 384 are same model, but are trained differently during ImageNet pretraining.
     """
-    def __init__(self, label_dim=527, fstride=10, tstride=10, input_fdim=128, input_tdim=1024, model_size='base384', verbose=True):
+    def __init__(self, label_dim=527, fstride=10, tstride=10, input_fdim=128, input_tdim=1024, model_size='base384'):
 
         super(ASTModel, self).__init__()
         assert timm.__version__ == '0.4.5', 'Please use timm == 0.4.5, the code might not be compatible with newer versions.'
@@ -131,13 +146,13 @@ class ASTModelCosineSim(nn.Module):
         # if AudioSet pretraining is not used (but ImageNet pretraining may still apply)
 
         if model_size == 'tiny224':
-            self.v = timm.create_model('vit_deit_tiny_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_tiny_distilled_patch16_224', pretrained=True)
         elif model_size == 'small224':
-            self.v = timm.create_model('vit_deit_small_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_small_distilled_patch16_224', pretrained=True)
         elif model_size == 'base224':
-            self.v = timm.create_model('vit_deit_base_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_base_distilled_patch16_224', pretrained=True)
         elif model_size == 'base384':
-            self.v = timm.create_model('vit_deit_base_distilled_patch16_384', pretrained=False)
+            self.v = timm.create_model('vit_deit_base_distilled_patch16_384', pretrained=True)
         else:
             raise Exception('Model size must be one of tiny224, small224, base224, base384.')
         self.original_num_patches = self.v.patch_embed.num_patches
@@ -153,11 +168,27 @@ class ASTModelCosineSim(nn.Module):
 
 
         # the linear projection layer
+        # the linear projection layer
         new_proj = torch.nn.Conv2d(1, self.original_embedding_dim, kernel_size=(16, 16), stride=(fstride, tstride))
+        new_proj.weight = torch.nn.Parameter(torch.sum(self.v.patch_embed.proj.weight, dim=1).unsqueeze(1))
+        new_proj.bias = self.v.patch_embed.proj.bias
         self.v.patch_embed.proj = new_proj
-        new_pos_embed = nn.Parameter(torch.zeros(1, self.v.patch_embed.num_patches + 2, self.original_embedding_dim))
-        self.v.pos_embed = new_pos_embed
-        trunc_normal_(self.v.pos_embed, std=.02)
+        
+        new_pos_embed = self.v.pos_embed[:, 2:, :].detach().reshape(1, self.original_num_patches, self.original_embedding_dim).transpose(1, 2).reshape(1, self.original_embedding_dim, self.oringal_hw, self.oringal_hw)
+        # cut (from middle) or interpolate the second dimension of the positional embedding
+        if t_dim <= self.oringal_hw:
+            new_pos_embed = new_pos_embed[:, :, :, int(self.oringal_hw / 2) - int(t_dim / 2): int(self.oringal_hw / 2) - int(t_dim / 2) + t_dim]
+        else:
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), mode='bilinear')
+        # cut (from middle) or interpolate the first dimension of the positional embedding
+        if f_dim <= self.oringal_hw:
+            new_pos_embed = new_pos_embed[:, :, int(self.oringal_hw / 2) - int(f_dim / 2): int(self.oringal_hw / 2) - int(f_dim / 2) + f_dim, :]
+        else:
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), mode='bilinear')
+        # flatten the positional embedding
+        new_pos_embed = new_pos_embed.reshape(1, self.original_embedding_dim, num_patches).transpose(1,2)
+        # concatenate the above positional embedding with the cls token and distillation token of the deit model.
+        self.v.pos_embed = nn.Parameter(torch.cat([self.v.pos_embed[:, :2, :].detach(), new_pos_embed], dim=1))
         
 
     def get_shape(self, fstride, tstride, input_fdim=128, input_tdim=1024):
@@ -221,13 +252,13 @@ class ASTModelAttentionSparse(nn.Module):
         # if AudioSet pretraining is not used (but ImageNet pretraining may still apply)
 
         if model_size == 'tiny224':
-            self.v = timm.create_model('vit_deit_tiny_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_tiny_distilled_patch16_224', pretrained=True)
         elif model_size == 'small224':
-            self.v = timm.create_model('vit_deit_small_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_small_distilled_patch16_224', pretrained=True)
         elif model_size == 'base224':
-            self.v = timm.create_model('vit_deit_base_distilled_patch16_224', pretrained=False)
+            self.v = timm.create_model('vit_deit_base_distilled_patch16_224', pretrained=True)
         elif model_size == 'base384':
-            self.v = timm.create_model('vit_deit_base_distilled_patch16_384', pretrained=False)
+            self.v = timm.create_model('vit_deit_base_distilled_patch16_384', pretrained=True)
         else:
             raise Exception('Model size must be one of tiny224, small224, base224, base384.')
         self.original_num_patches = self.v.patch_embed.num_patches
@@ -243,11 +274,27 @@ class ASTModelAttentionSparse(nn.Module):
 
 
         # the linear projection layer
+        # the linear projection layer
         new_proj = torch.nn.Conv2d(1, self.original_embedding_dim, kernel_size=(16, 16), stride=(fstride, tstride))
+        new_proj.weight = torch.nn.Parameter(torch.sum(self.v.patch_embed.proj.weight, dim=1).unsqueeze(1))
+        new_proj.bias = self.v.patch_embed.proj.bias
         self.v.patch_embed.proj = new_proj
-        new_pos_embed = nn.Parameter(torch.zeros(1, self.v.patch_embed.num_patches + 2, self.original_embedding_dim))
-        self.v.pos_embed = new_pos_embed
-        trunc_normal_(self.v.pos_embed, std=.02)
+        
+        new_pos_embed = self.v.pos_embed[:, 2:, :].detach().reshape(1, self.original_num_patches, self.original_embedding_dim).transpose(1, 2).reshape(1, self.original_embedding_dim, self.oringal_hw, self.oringal_hw)
+        # cut (from middle) or interpolate the second dimension of the positional embedding
+        if t_dim <= self.oringal_hw:
+            new_pos_embed = new_pos_embed[:, :, :, int(self.oringal_hw / 2) - int(t_dim / 2): int(self.oringal_hw / 2) - int(t_dim / 2) + t_dim]
+        else:
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(self.oringal_hw, t_dim), mode='bilinear')
+        # cut (from middle) or interpolate the first dimension of the positional embedding
+        if f_dim <= self.oringal_hw:
+            new_pos_embed = new_pos_embed[:, :, int(self.oringal_hw / 2) - int(f_dim / 2): int(self.oringal_hw / 2) - int(f_dim / 2) + f_dim, :]
+        else:
+            new_pos_embed = torch.nn.functional.interpolate(new_pos_embed, size=(f_dim, t_dim), mode='bilinear')
+        # flatten the positional embedding
+        new_pos_embed = new_pos_embed.reshape(1, self.original_embedding_dim, num_patches).transpose(1,2)
+        # concatenate the above positional embedding with the cls token and distillation token of the deit model.
+        self.v.pos_embed = nn.Parameter(torch.cat([self.v.pos_embed[:, :2, :].detach(), new_pos_embed], dim=1))
         
 
     def get_shape(self, fstride, tstride, input_fdim=128, input_tdim=1024):
